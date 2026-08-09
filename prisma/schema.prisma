@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+enum UserRole {
+  MEMBER
+  TRAINER
+  ADMIN
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum ClassStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+// ==================== MODELS ====================
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  userName  String?
+  role      UserRole @default(MEMBER)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  bookings    Booking[]
+  reviews     Review[]
+  classes     Class[]      @relation("TrainerClasses")
+
+  @@map("users")
+}
+
+model MembershipPlan {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  duration    Int      // days (30, 90, 365)
+  price       Float
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@map("membership_plans")
+}
+
+model Membership {
+  id        String           @id @default(uuid())
+  startDate DateTime
+  endDate   DateTime
+  status    MembershipStatus @default(ACTIVE)
+  isDeleted Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  userId String
+  user   User           @relation(fields: [userId], references: [id])
+  planId String
+  plan   MembershipPlan @relation(fields: [planId], references: [id])
+
+  @@map("memberships")
+}
+
+model Class {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  duration    Int         // minutes
+  capacity    Int
+  startTime   DateTime
+  status      ClassStatus @default(UPCOMING)
+  isDeleted   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  trainerId String
+  trainer   User      @relation("TrainerClasses", fields: [trainerId], references: [id])
+  bookings  Booking[]
+
+  @@map("classes")
+}
+
+model Booking {
+  id        String        @id @default(uuid())
+  status    BookingStatus @default(PENDING)
+  isDeleted Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  classId String
+  class   Class  @relation(fields: [classId], references: [id])
+
+  @@map("bookings")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("reviews")
+}
