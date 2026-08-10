@@ -7,7 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 // ==================== ENUMS ====================
+
 enum UserRole {
   MEMBER
   TRAINER
@@ -33,155 +35,179 @@ enum BookingStatus {
   CANCELLED
 }
 
-// ==================== MODELS ====================
+
+// ==================== USER ====================
 
 model User {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  password      String?
+  email         String   @unique
+  password      String
   phone         String?
   userName      String?
-  role          UserRole  @default(MEMBER)
-  isDeleted     Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role          UserRole @default(MEMBER)
 
-  // Better Auth Relations
-  sessions      Session[]
-  accounts      Account[]
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Domain Relations
-  memberships   Membership[]
-  bookings      Booking[]
-  reviews       Review[]
-  classes       Class[]   @relation("TrainerClasses")
+  // Relations
+  memberships Membership[]
+  bookings    Booking[]
+  reviews     Review[]
+
+  classes Class[] @relation("TrainerClasses")
+
+  @@index([email])
+  @@index([role])
+  @@index([isDeleted])
 
   @@map("users")
 }
 
-model Session {
-  id        String   @id @default(uuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("sessions")
-}
-
-model Account {
-  id                    String    @id @default(uuid())
-  userId                String
-  accountId             String
-  providerId            String
-  accessToken           String?
-  refreshToken          String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  idToken               String?
-  password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("accounts")
-}
-
-model Verification {
-  id         String   @id @default(uuid())
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@map("verifications")
-}
+// ==================== MEMBERSHIP PLAN ====================
 
 model MembershipPlan {
-  id          String   @id @default(uuid())
+  id          String @id @default(uuid())
   name        String
   description String?
-  duration    Int      // days (30, 90, 365)
+  duration    Int
   price       Float
-  isDeleted   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   memberships Membership[]
 
+  @@index([isDeleted])
+
   @@map("membership_plans")
 }
+
+
+// ==================== MEMBERSHIP ====================
 
 model Membership {
   id        String           @id @default(uuid())
   startDate DateTime
   endDate   DateTime
   status    MembershipStatus @default(ACTIVE)
-  isDeleted Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
 
-  userId String
-  user   User           @relation(fields: [userId], references: [id])
-  planId String
-  plan   MembershipPlan @relation(fields: [planId], references: [id])
-
-  @@map("memberships")
-}
-
-model Class {
-  id          String      @id @default(uuid())
-  title       String
-  description String?
-  duration    Int         // minutes
-  capacity    Int
-  startTime   DateTime
-  status      ClassStatus @default(UPCOMING)
-  isDeleted   Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  trainerId String
-  trainer   User      @relation("TrainerClasses", fields: [trainerId], references: [id])
-  bookings  Booking[]
-
-  @@map("classes")
-}
-
-model Booking {
-  id        String        @id @default(uuid())
-  status    BookingStatus @default(PENDING)
-  isDeleted Boolean       @default(false)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  userId  String
-  user    User   @relation(fields: [userId], references: [id])
-  classId String
-  class   Class  @relation(fields: [classId], references: [id])
-
-  @@map("bookings")
-}
-
-model Review {
-  id        String   @id @default(uuid())
-  rating    Int
-  comment   String?
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(
+    fields: [userId],
+    references: [id]
+  )
+
+  planId String
+  plan   MembershipPlan @relation(
+    fields: [planId],
+    references: [id]
+  )
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([isDeleted])
+
+  @@map("memberships")
+}
+
+
+// ==================== CLASS ====================
+
+model Class {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  duration    Int
+  capacity    Int
+  startTime   DateTime
+  status      ClassStatus @default(UPCOMING)
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trainerId String
+
+  trainer User @relation(
+    "TrainerClasses",
+    fields: [trainerId],
+    references: [id]
+  )
+
+  bookings Booking[]
+
+  @@index([trainerId])
+  @@index([status])
+  @@index([startTime])
+  @@index([isDeleted])
+
+  @@map("classes")
+}
+
+
+// ==================== BOOKING ====================
+
+model Booking {
+  id     String        @id @default(uuid())
+  status BookingStatus @default(PENDING)
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+
+  user User @relation(
+    fields: [userId],
+    references: [id]
+  )
+
+  classId String
+
+  class Class @relation(
+    fields: [classId],
+    references: [id]
+  )
+
+  @@index([userId])
+  @@index([classId])
+  @@index([status])
+  @@index([isDeleted])
+
+  @@map("bookings")
+}
+
+
+// ==================== REVIEW ====================
+
+model Review {
+  id      String @id @default(uuid())
+  rating  Int
+  comment String?
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+
+  user User @relation(
+    fields: [userId],
+    references: [id]
+  )
+
+  @@index([userId])
+  @@index([rating])
+  @@index([isDeleted])
 
   @@map("reviews")
 }

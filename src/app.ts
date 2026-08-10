@@ -1,16 +1,18 @@
 import express from "express";
 import cors from "cors";
+import reviewRouter from "./services/service-router";
+// import reviewRouter from "./services/service-route";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Gym Backend API is running",
-  });
-});
+// Register Review Router
+app.use("/api/reviews", reviewRouter);
 
-export default app;
+const PORT = process.env.PORT || 8000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
