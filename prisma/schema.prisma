@@ -211,3 +211,16 @@ model Review {
 
   @@map("reviews")
 }
+
+
+model WorkoutPlan {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  level       String   // "Beginner" | "Intermediate" | "Advanced"
+  duration    String   // e.g. "4 Weeks" / "60 Mins"
+  category    String   // e.g. "Fat Loss", "Muscle Building"
+  price       Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
