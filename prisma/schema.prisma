@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 // ==================== ENUMS ====================
 
 enum UserRole {
@@ -35,57 +34,48 @@ enum BookingStatus {
   CANCELLED
 }
 
-
 // ==================== USER ====================
 
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  password      String
-  phone         String?
-  userName      String?
-  role          UserRole @default(MEMBER)
-
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String?
+  phone     String?
+  userName  String?
+  role      UserRole @default(MEMBER)
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
   memberships Membership[]
   bookings    Booking[]
   reviews     Review[]
-
-  classes Class[] @relation("TrainerClasses")
+  classes     Class[] @relation("TrainerClasses")
 
   @@index([email])
   @@index([role])
   @@index([isDeleted])
-
   @@map("users")
 }
-
 
 // ==================== MEMBERSHIP PLAN ====================
 
 model MembershipPlan {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
   duration    Int
   price       Float
-
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   memberships Membership[]
 
   @@index([isDeleted])
-
   @@map("membership_plans")
 }
-
 
 // ==================== MEMBERSHIP ====================
 
@@ -94,31 +84,22 @@ model Membership {
   startDate DateTime
   endDate   DateTime
   status    MembershipStatus @default(ACTIVE)
-
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isDeleted Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   userId String
-  user   User @relation(
-    fields: [userId],
-    references: [id]
-  )
+  user   User @relation(fields: [userId], references: [id])
 
   planId String
-  plan   MembershipPlan @relation(
-    fields: [planId],
-    references: [id]
-  )
+  plan   MembershipPlan @relation(fields: [planId], references: [id])
 
   @@index([userId])
   @@index([planId])
   @@index([status])
   @@index([isDeleted])
-
   @@map("memberships")
 }
-
 
 // ==================== CLASS ====================
 
@@ -130,14 +111,12 @@ model Class {
   capacity    Int
   startTime   DateTime
   status      ClassStatus @default(UPCOMING)
-
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isDeleted   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   trainerId String
-
-  trainer User @relation(
+  trainer   User @relation(
     "TrainerClasses",
     fields: [trainerId],
     references: [id]
@@ -149,78 +128,46 @@ model Class {
   @@index([status])
   @@index([startTime])
   @@index([isDeleted])
-
   @@map("classes")
 }
-
 
 // ==================== BOOKING ====================
 
 model Booking {
-  id     String        @id @default(uuid())
-  status BookingStatus @default(PENDING)
-
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String        @id @default(uuid())
+  status    BookingStatus @default(PENDING)
+  isDeleted Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   userId String
-
-  user User @relation(
-    fields: [userId],
-    references: [id]
-  )
+  user   User @relation(fields: [userId], references: [id])
 
   classId String
-
-  class Class @relation(
-    fields: [classId],
-    references: [id]
-  )
+  class   Class @relation(fields: [classId], references: [id])
 
   @@index([userId])
   @@index([classId])
   @@index([status])
   @@index([isDeleted])
-
   @@map("bookings")
 }
-
 
 // ==================== REVIEW ====================
 
 model Review {
-  id      String @id @default(uuid())
-  rating  Int
-  comment String?
-
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   userId String
-
-  user User @relation(
-    fields: [userId],
-    references: [id]
-  )
+  user   User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([rating])
   @@index([isDeleted])
-
   @@map("reviews")
-}
-
-
-model WorkoutPlan {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  level       String   // "Beginner" | "Intermediate" | "Advanced"
-  duration    String   // e.g. "4 Weeks" / "60 Mins"
-  category    String   // e.g. "Fat Loss", "Muscle Building"
-  price       Float    @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }

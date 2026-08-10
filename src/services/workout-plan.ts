@@ -1,62 +1,43 @@
-import { Router } from "express";
-import { prisma } from "../lib/prisma-client";
+// import { prisma } from "../app/lib/prisma-client"; // path ঠিক করে নিও
 
-const router = Router();
+import { prisma } from "../app/lib/prisma-client";
 
-// POST: Add new workout plan
-router.post("/", async (req, res) => {
-  try {
-    const { title, description, level, duration, category, price } = req.body;
-
-    if (!title || !level || !duration) {
-      return res.status(400).json({
-        success: false,
-        message: "Title, Level, and Duration are required",
-      });
-    }
-
-    const newPlan = await prisma.workoutPlan.create({
+export const workoutService = {
+  async createWorkout(data: {
+    title: string;
+    description: string;
+    level: string;
+    duration: string;
+    category: string;
+    price?: number;
+  }) {
+    return await prisma.workoutPlan.create({
       data: {
-        title,
-        description,
-        level,
-        duration,
-        category: category || "General",
-        price: price ? parseFloat(price) : 0,
+        title: data.title,
+        description: data.description,
+        level: data.level,
+        duration: data.duration,
+        category: data.category,
+        price: data.price ? Number(data.price) : 0,
       },
     });
+  },
 
-    res.status(201).json({
-      success: true,
-      data: newPlan,
-    });
-  } catch (error: any) {
-    console.error("Create Workout Error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to create workout plan",
-    });
-  }
-});
-
-// GET: Fetch all workout plans for users
-router.get("/", async (req, res) => {
-  try {
-    const plans = await prisma.workoutPlan.findMany({
+  async getAllWorkouts() {
+    return await prisma.workoutPlan.findMany({
       orderBy: { createdAt: "desc" },
     });
+  },
 
-    res.status(200).json({
-      success: true,
-      data: plans,
+  async getWorkoutById(id: string) {
+    return await prisma.workoutPlan.findUnique({
+      where: { id },
     });
-  } catch (error: any) {
-    console.error("Get Workouts Error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch workout plans",
-    });
-  }
-});
+  },
 
-export default router;
+  async deleteWorkout(id: string) {
+    return await prisma.workoutPlan.delete({
+      where: { id },
+    });
+  },
+};

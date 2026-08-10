@@ -1,62 +1,125 @@
 import { Router, Request, Response } from "express";
-import { prisma } from "../lib/prisma-client"; // আপনার prisma client-এর সঠিক পাথ নিশ্চিত করুন
+import { workoutService } from "../services/workout-plan";
+import { prisma } from "../app/lib/prisma-client";
+// import { workoutService } from "../services/workout.service";
 
 const router = Router();
+// প্ল্যান আপডেট
+router.put("/:id", async (req: Request, res: Response) => {
+  try {
+    const { title, description, level, duration, category, price } = req.body;
 
-// POST: Add new workout plan
+    const workout = await prisma.workoutPlan.update({
+      where: { id: req.params.id },
+      data: {
+        title,
+        description,
+        level,
+        duration,
+        category,
+        price: price !== undefined ? Number(price) : undefined,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: workout,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update workout",
+    });
+  }
+});
+
+
+// সব workout
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const workouts = await workoutService.getAllWorkouts();
+    res.status(200).json({
+      success: true,
+      data: workouts,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch workouts",
+    });
+  }
+});
+
+// নতুন workout অ্যাড
 router.post("/", async (req: Request, res: Response) => {
   try {
     const { title, description, level, duration, category, price } = req.body;
 
-    // Basic Validation
-    if (!title || !level || !duration) {
+    if (!title || !description || !level || !duration || !category) {
       return res.status(400).json({
         success: false,
-        message: "Title, Level, and Duration are required fields.",
+        message: "title, description, level, duration and category are required",
       });
     }
 
-    const newPlan = await prisma.workoutPlan.create({
-      data: {
-        title,
-        description: description || "",
-        level,
-        duration,
-        category: category || "General",
-        price: price ? parseFloat(price) : 0,
-      },
+    const workout = await workoutService.createWorkout({
+      title,
+      description,
+      level,
+      duration,
+      category,
+      price,
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      message: "Workout plan created successfully!",
-      data: newPlan,
+      data: workout,
     });
   } catch (error: any) {
-    console.error("Create Plan Error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message || "Failed to create workout plan",
     });
   }
 });
 
-// GET: Fetch all workout plans
-router.get("/", async (_req: Request, res: Response) => {
+// একটা workout
+router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const plans = await prisma.workoutPlan.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const workout = await workoutService.getWorkoutById(req.params.id);
 
-    return res.status(200).json({
+    if (!workout) {
+      return res.status(404).json({
+        success: false,
+        message: "Workout plan not found",
+      });
+    }
+
+    res.status(200).json({
       success: true,
-      data: plans,
+      data: workout,
     });
   } catch (error: any) {
-    console.error("Get Plans Error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch workout plans",
+      message: error.message || "Failed to fetch workout",
+    });
+  }
+});
+
+// ডিলিট
+router.delete("/:id", async (req: Request, res: Response) => {
+  try {
+    await workoutService.deleteWorkout(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Workout plan deleted successfully",
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete workout",
     });
   }
 });

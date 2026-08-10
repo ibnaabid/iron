@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import reviewRouter from "./services/service-router";
-import workoutRouter from "./routes/workout"; // Workout Router ইম্পোর্ট করা হলো
+import workoutRouter from "./routes/workout";
 
 const app = express();
 
@@ -10,7 +10,7 @@ app.use(express.json());
 
 // Register Routers
 app.use("/api/reviews", reviewRouter);
-app.use("/api/workouts", workoutRouter); // Workout API রুট যুক্ত করা হলো
+app.use("/api/workouts", workoutRouter);
 
 const PORT = process.env.PORT || 8000;
 
